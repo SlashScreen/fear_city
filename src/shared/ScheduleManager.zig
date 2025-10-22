@@ -17,11 +17,9 @@ pub fn init(alloc: std.mem.Allocator) !ScheduleManager {
 pub fn add_schedule(self: *ScheduleManager, comptime hook: @Type(.enum_literal)) !void {
     const sch: Schedule = .init(self.allocator);
     try self.schedules.put(@tagName(hook), sch);
-    std.debug.print("Added schedule {any}\n", .{@tagName(hook)});
 }
 
 pub fn add_system(self: *ScheduleManager, comptime hook: @Type(.enum_literal), system: System) !void {
-    std.debug.print("Adding system to {s}\n", .{@tagName(hook)});
     var schedule = self.schedules.getPtr(@tagName(hook)) orelse {
         std.debug.print("Add system: No schedule found for {s}", .{@tagName(hook)});
         return;

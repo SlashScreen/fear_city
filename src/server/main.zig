@@ -7,24 +7,25 @@ pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();
 
-    // var server = try ws.Server(Handler).init(allocator, .{
-    //     .port = shared.config.PORT,
-    //     .address = "127.0.0.1",
-    //     .handshake = .{
-    //         .timeout = 3,
-    //         .max_size = 1024,
-    //         // since we aren't using hanshake.headers
-    //         // we can set this to 0 to save a few bytes.
-    //         .max_headers = 0,
-    //     },
-    // });
+    // Server
 
-    // // Arbitrary (application-specific) data to pass into each handler
-    // // Pass void ({}) into listen if you have none
-    // var app = App{};
+    var server = try ws.Server(Handler).init(allocator, .{
+        .port = shared.config.PORT,
+        .address = "127.0.0.1",
+        .handshake = .{
+            .timeout = 3,
+            .max_size = 1024,
+            // since we aren't using hanshake.headers
+            // we can set this to 0 to save a few bytes.
+            .max_headers = 0,
+        },
+    });
 
-    // // this blocks
-    // try server.listen(&app);
+    var data = ServerData{};
+    var server_thread = try server.listenInNewThread(&data);
+    server_thread.detach();
+
+    // ECS
 
     var sm: shared.ScheduleManager = try .init(allocator);
     defer sm.deinit();
@@ -44,8 +45,15 @@ pub fn main() !void {
     try sm.add_system(.update, shared.test_tag_update);
 
     sm.run_schedule(.init, &registry, &app);
+    const threshold_ns = std.time.ns_per_s / shared.config.TICKS_PER_SECOND;
+    var timer = try std.time.Timer.start();
+
     while (true) {
-        std.Thread.sleep(std.time.ns_per_s / shared.config.TICKS_PER_SECOND);
+        if (timer.read() <= threshold_ns) {
+            continue;
+        }
+        _ = timer.lap();
+
         app.tick();
         sm.run_schedule(.update, &registry, &app);
     }
@@ -53,16 +61,18 @@ pub fn main() !void {
 
 // This is your application-specific wrapper around a websocket connection
 const Handler = struct {
-    app: *App,
+    app: *ServerData,
     conn: *ws.Conn,
 
     // You must define a public init function which takes
-    pub fn init(h: *ws.Handshake, conn: *ws.Conn, app: *App) !Handler {
+    pub fn init(h: *ws.Handshake, conn: *ws.Conn, app: *ServerData) !Handler {
         // `h` contains the initial websocket "handshake" request
         // It can be used to apply application-specific logic to verify / allow
         // the connection (e.g. valid url, query string parameters, or headers)
 
         _ = h; // we're not using this in our simple case
+
+        std.debug.print("initialized server", .{});
 
         return .{
             .app = app,
@@ -72,13 +82,9 @@ const Handler = struct {
 
     // You must defined a public clientMessage method
     pub fn clientMessage(self: *Handler, data: []const u8) !void {
+        std.debug.print("got message {s}", .{data});
         try self.conn.write(data); // echo the message back
     }
 };
 
-// This is application-specific you want passed into your Handler's
-// init function.
-const App = struct {
-    // maybe a db pool
-    // maybe a list of rooms
-};
+const ServerData = struct {};

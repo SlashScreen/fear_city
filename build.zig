@@ -99,6 +99,7 @@ pub fn build(b: *std.Build) void {
 
     exe.linkLibrary(raylib_artifact);
     client_module.addImport("raylib", raylib);
+    shared_module.addImport("raylib", raylib);
     client_module.addImport("raygui", raygui);
     // WASM build
     if (target.query.os_tag == .emscripten) {
