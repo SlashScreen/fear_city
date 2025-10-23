@@ -15,13 +15,24 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
+    // Engine
+
+    const engine_module = b.createModule(.{
+        .root_source_file = b.path("src/engine/lib.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+
     // Client
 
     const client_module = b.createModule(.{
         .root_source_file = b.path("src/client/main.zig"),
         .target = target,
         .optimize = optimize,
-        .imports = &.{.{ .name = "shared", .module = shared_module }},
+        .imports = &.{
+            .{ .name = "shared", .module = shared_module },
+            .{ .name = "engine", .module = engine_module },
+        },
     });
 
     // Server
@@ -30,7 +41,10 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("src/server/main.zig"),
         .target = target,
         .optimize = optimize,
-        .imports = &.{.{ .name = "shared", .module = shared_module }},
+        .imports = &.{
+            .{ .name = "shared", .module = shared_module },
+            .{ .name = "engine", .module = engine_module },
+        },
     });
 
     // EXE
@@ -100,7 +114,10 @@ pub fn build(b: *std.Build) void {
     exe.linkLibrary(raylib_artifact);
     client_module.addImport("raylib", raylib);
     shared_module.addImport("raylib", raylib);
+    engine_module.addImport("raylib", raylib);
+
     client_module.addImport("raygui", raygui);
+    engine_module.addImport("raygui", raygui);
     // WASM build
     if (target.query.os_tag == .emscripten) {
         const emsdk = rlz.emsdk;
