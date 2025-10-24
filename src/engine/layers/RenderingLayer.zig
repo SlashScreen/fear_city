@@ -1,59 +1,37 @@
 const std = @import("std");
 const rl = @import("raylib");
+const engine = @import("../lib.zig");
 
 const RenderingLayer = @This();
-const App = @import("../App.zig");
-const Layer = @import("../Layer.zig");
-const Event = @import("../Event.zig");
-
-const screenWidth = 800;
-const screenHeight = 450;
+const App = engine.App;
+const Layer = engine.Layer;
+const Event = engine.Event;
 
 screen_texture: ?rl.RenderTexture2D,
-screen_rect: ?rl.Rectangle,
 
 pub fn new() !RenderingLayer {
     return .{
         .screen_texture = null,
-        .screen_rect = null,
     };
 }
 
 fn init(self: *RenderingLayer, app: *App) void {
-    rl.initWindow(screenWidth, screenHeight, app.name);
-    rl.setTargetFPS(60);
-
-    self.screen_texture = rl.loadRenderTexture(screenWidth, screenHeight) catch |e| {
-        std.log.err("Error creating screen texture: {any}", .{e});
-        @panic("Uh oh sisters!!");
-    };
-    self.screen_rect = rl.Rectangle{
-        .x = 0.0,
-        .y = 0.0,
-        .width = @floatFromInt(self.screen_texture.?.texture.width),
-        .height = @floatFromInt(-self.screen_texture.?.texture.height),
-    };
+    _ = self;
+    _ = app;
 }
 
 fn update(self: *RenderingLayer, app: *App) void {
-    if (rl.windowShouldClose()) {
-        app.close();
-        return;
-    }
+    var tex = self.screen_texture orelse return;
 
-    rl.beginTextureMode(self.screen_texture.?);
+    rl.beginTextureMode(tex);
     {
         rl.clearBackground(.white);
         rl.drawText("Yeeeeaay. Peace peace", 190, 200, 20, .light_gray);
     }
     rl.endTextureMode();
 
-    rl.beginDrawing();
-    {
-        rl.clearBackground(.black);
-        rl.drawTextureRec(self.screen_texture.?.texture, self.screen_rect.?, rl.Vector2{ .x = 0.0, .y = 0.0 }, .white);
-    }
-    rl.endDrawing();
+    var ev = Event.new("render_texture_ready", @ptrCast(@alignCast(&tex)));
+    app.broadcast_event(&ev);
 }
 
 fn shutdown(self: *RenderingLayer, app: *App) void {
@@ -65,9 +43,13 @@ fn shutdown(self: *RenderingLayer, app: *App) void {
 }
 
 fn on_message(self: *RenderingLayer, event: *Event, app: *App) void {
-    _ = self;
-    _ = event;
-    _ = app;
+    std.debug.print("Rendering layer recieved event {s}", .{event.label});
+    if (std.mem.eql(u8, event.label, "window_created")) {
+        self.screen_texture = rl.loadRenderTexture(@intCast(app.width), @intCast(app.height)) catch |e| {
+            std.log.err("Error creating screen texture: {any}", .{e});
+            @panic("Uh oh sisters!!");
+        };
+    }
 }
 
 fn on_attach(self: Layer.UserData, app: *App) void {
