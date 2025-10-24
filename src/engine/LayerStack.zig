@@ -21,24 +21,24 @@ pub fn add_layer(self: *LayerStack, layer: Layer, app: *App) void {
         return;
     };
 
-    layer.on_attach(layer.userdata, app);
+    layer.on_attach(layer.context, app);
 }
 
 pub fn pop_layer(self: *LayerStack, app: *App) void {
     if (self.stack.pop()) |layer| {
-        layer.on_detach(layer.userdata, app);
+        layer.on_detach(layer.context, app);
     }
 }
 
 pub fn update_layers(self: *LayerStack, app: *App) void {
     for (self.stack.items) |value| {
-        value.on_update(value.userdata, app);
+        value.on_update(value.context, app);
     }
 }
 
 pub fn broadcast_event(self: *LayerStack, event: *Event, app: *App) void {
     for (self.stack.items) |value| {
-        value.on_event(value.userdata, event, app);
+        value.on_event(value.context, event, app);
     }
 }
 

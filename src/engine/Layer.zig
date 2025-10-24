@@ -1,13 +1,13 @@
 const Event = @import("Event.zig");
 const App = @import("App.zig");
 
-pub const PtrType = *align(@alignOf(*const fn () void)) anyopaque;
-pub const UserData = *align(@alignOf(u32)) anyopaque;
+pub const PtrType = *anyopaque;
+pub const Context = *anyopaque;
 
 name: []const u8,
-userdata: UserData,
+context: Context,
 
-on_attach: *const fn (UserData, *App) void,
-on_update: *const fn (UserData, *App) void,
-on_detach: *const fn (UserData, *App) void,
-on_event: *const fn (UserData, *Event, *App) void,
+on_attach: *const fn (Context, *App) void,
+on_update: *const fn (Context, *App) void,
+on_detach: *const fn (Context, *App) void,
+on_event: *const fn (Context, *Event, *App) void,

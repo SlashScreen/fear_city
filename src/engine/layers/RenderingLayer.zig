@@ -38,12 +38,9 @@ fn shutdown(self: *RenderingLayer, app: *App) void {
     _ = app;
 
     rl.unloadTexture(self.screen_texture.?.texture);
-
-    rl.closeWindow();
 }
 
 fn on_message(self: *RenderingLayer, event: *Event, app: *App) void {
-    std.debug.print("Rendering layer recieved event {s}", .{event.label});
     if (std.mem.eql(u8, event.label, "window_created")) {
         self.screen_texture = rl.loadRenderTexture(@intCast(app.width), @intCast(app.height)) catch |e| {
             std.log.err("Error creating screen texture: {any}", .{e});
@@ -52,20 +49,20 @@ fn on_message(self: *RenderingLayer, event: *Event, app: *App) void {
     }
 }
 
-fn on_attach(self: Layer.UserData, app: *App) void {
-    init(@ptrCast(self), app);
+fn on_attach(self: Layer.Context, app: *App) void {
+    init(@ptrCast(@alignCast(self)), app);
 }
 
-fn on_detach(self: Layer.UserData, app: *App) void {
-    shutdown(@ptrCast(self), app);
+fn on_detach(self: Layer.Context, app: *App) void {
+    shutdown(@ptrCast(@alignCast(self)), app);
 }
 
-fn on_event(self: Layer.UserData, event: *Event, app: *App) void {
-    on_message(@ptrCast(self), event, app);
+fn on_event(self: Layer.Context, event: *Event, app: *App) void {
+    on_message(@ptrCast(@alignCast(self)), event, app);
 }
 
-fn on_update(self: Layer.UserData, app: *App) void {
-    update(@ptrCast(self), app);
+fn on_update(self: Layer.Context, app: *App) void {
+    update(@ptrCast(@alignCast(self)), app);
 }
 
 pub fn as_layer(self: *RenderingLayer) Layer {
@@ -75,6 +72,6 @@ pub fn as_layer(self: *RenderingLayer) Layer {
         .on_detach = on_detach,
         .on_event = on_event,
         .on_update = on_update,
-        .userdata = @ptrCast(self),
+        .context = @ptrCast(@alignCast(self)),
     };
 }
