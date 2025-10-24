@@ -4,12 +4,14 @@ const LayerStack = @import("LayerStack.zig");
 const Layer = @import("Layer.zig");
 const App = @This();
 
+name: []const u8,
 layer_stack: LayerStack,
 allocator: std.mem.Allocator,
 should_stop: bool,
 
-pub fn init(alloc: std.mem.Allocator) App {
+pub fn init(alloc: std.mem.Allocator, name: []const u8) App {
     return .{
+        .name = name,
         .layer_stack = .init(alloc),
         .allocator = alloc,
         .should_stop = false,

@@ -14,3 +14,16 @@ fn init(alloc: std.mem.Allocator) Scene {
         .registry = ecs.Registry.init(alloc),
     };
 }
+
+pub const TestComponentRepresentation = union {
+    TestComponent: struct {},
+    CubeComponent: struct {
+        extents: @Vector(3, f32),
+    },
+};
+
+pub const SceneRepresentation = struct {
+    entities: []struct {
+        components: []TestComponentRepresentation,
+    },
+};

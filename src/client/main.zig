@@ -6,9 +6,9 @@ pub fn main() anyerror!void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();
 
-    var app = engine.App.init(allocator);
+    var app = engine.App.init(allocator, "Fear City 1975");
 
-    var rendering_layer = engine.RenderingLayer{};
+    var rendering_layer = try engine.RenderingLayer.new();
     const r_layer = rendering_layer.as_layer();
 
     app.add_layer(r_layer);

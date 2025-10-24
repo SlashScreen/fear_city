@@ -1,0 +1,11 @@
+.{
+    .{
+        .name = "Test Entity",
+        .components = .{
+            .TestComponent = .{},
+            .CubeComponent = .{
+                .extents = .{ 1.0, 1.0, 1.0 },
+            },
+        },
+    },
+}
