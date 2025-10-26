@@ -11,6 +11,15 @@ allocator: std.mem.Allocator,
 schedule_manager: ScheduleManager,
 timer: std.time.Timer,
 
+fn new(alloc: std.mem.Allocator) !SceneLayer {
+    return .{
+        .root_scene = null,
+        .allocator = alloc,
+        .schedule_manager = try ScheduleManager.init(alloc),
+        .timer = try .start,
+    };
+}
+
 fn update(self: *SceneLayer, app: *App) void {
     if (self.timer.read() >= std.time.ns_per_s / engine.TICKS_PER_SECOND) {
         _ = self.timer.lap();

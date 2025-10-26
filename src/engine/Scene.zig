@@ -32,6 +32,11 @@ pub fn draw(self: *Scene, app: *App, sm: *ScheduleManager) void {
     }
 }
 
+pub fn serialize_scene(self: *Scene) void {
+    const type_store = self.registry.type_store;
+    var k_iter = type_store.map.keyIterator();
+}
+
 pub const TestComponentRepresentation = union {
     TestComponent: struct {},
     CubeComponent: struct {
