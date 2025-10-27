@@ -2,10 +2,9 @@ const std = @import("std");
 const engine = @import("engine");
 
 pub fn main() !void {
-    var app = engine.Core.App.new();
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     const alloc = arena.allocator();
-    app.init(alloc);
+    var app = engine.Core.App.init(alloc);
 
     var r_layer = engine.Layers.RenderingLayer{};
     const render_layer = r_layer.as_layer();

@@ -7,15 +7,11 @@ const LayerStack = @This();
 allocator: std.mem.Allocator,
 stack: std.ArrayList(Layer),
 
-pub fn new() LayerStack {
+pub fn init(alloc: std.mem.Allocator) LayerStack {
     return .{
-        .allocator = undefined,
+        .allocator = alloc,
         .stack = .empty,
     };
-}
-
-pub fn init(self: *LayerStack, alloc: std.mem.Allocator) void {
-    self.allocator = alloc;
 }
 
 pub fn add_layer(self: *LayerStack, layer: Layer) !void {

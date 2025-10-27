@@ -7,17 +7,12 @@ allocator: std.mem.Allocator,
 layer_stack: LayerStack,
 running: bool,
 
-pub fn new() App {
+pub fn init(alloc: std.mem.Allocator) App {
     return .{
-        .allocator = undefined,
-        .layer_stack = .new(),
+        .allocator = alloc,
+        .layer_stack = .init(alloc),
         .running = true,
     };
-}
-
-pub fn init(self: *App, alloc: std.mem.Allocator) void {
-    self.allocator = alloc;
-    self.layer_stack.init(alloc);
 }
 
 pub fn tick(self: *App) void {
