@@ -55,3 +55,17 @@ pub fn broadcast_event(self: LayerStack, event: *Event) void {
         };
     }
 }
+
+pub fn deinit(self: LayerStack) void {
+    while (self.stack.items.len > 0) {
+        const l = self.stack.pop();
+        if (l) |layer| {
+            layer.deinit() catch |err| {
+                std.log.err("Error executing deinit at layer: {any}", .{err});
+            };
+        } else {
+            break;
+        }
+    }
+    self.stack.deinit(self.allocator);
+}

@@ -1,107 +1,33 @@
 const std = @import("std");
-const rlz = @import("raylib_zig");
 
 pub fn build(b: *std.Build) void {
     // Options
     const server = b.option(bool, "server", "Whether this is the server executable.") orelse false;
+
+    if (server) {
+        build_server(b);
+    } else {
+        build_client(b);
+    }
+}
+
+fn build_client(b: *std.Build) void {
+    const rlz = @import("raylib_zig");
+
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
-
-    // Shared
-
-    const shared_module = b.createModule(.{
-        .root_source_file = b.path("src/shared/lib.zig"),
-        .target = target,
-        .optimize = optimize,
-    });
-
-    // Engine
-
-    const engine_module = b.createModule(.{
-        .root_source_file = b.path("src/engine/lib.zig"),
-        .target = target,
-        .optimize = optimize,
-    });
-
-    // Client
 
     const client_module = b.createModule(.{
         .root_source_file = b.path("src/client/main.zig"),
         .target = target,
         .optimize = optimize,
-        .imports = &.{
-            .{ .name = "shared", .module = shared_module },
-            .{ .name = "engine", .module = engine_module },
-        },
     });
 
-    // Server
+    const exe, const run_step = build_exe(b, client_module);
 
-    const server_module = b.createModule(.{
-        .root_source_file = b.path("src/server/main.zig"),
-        .target = target,
-        .optimize = optimize,
-        .imports = &.{
-            .{ .name = "shared", .module = shared_module },
-            .{ .name = "engine", .module = engine_module },
-        },
-    });
-
-    // EXE
-
-    const exe = b.addExecutable(.{
-        .name = "fear_city",
-        .root_module = if (server) server_module else client_module,
-    });
-    b.installArtifact(exe);
-
-    const run_cmd = b.addRunArtifact(exe);
-    const run_step = b.step("run", "Run the app");
-    run_step.dependOn(&run_cmd.step);
-    run_cmd.step.dependOn(b.getInstallStep());
-
-    // This allows the user to pass arguments to the application in the build
-    // command itself, like this: `zig build run -- arg1 arg2 etc`
-    if (b.args) |args| {
-        run_cmd.addArgs(args);
-    }
-
-    const exe_tests = b.addTest(.{
-        .root_module = exe.root_module,
-    });
-
-    const run_exe_tests = b.addRunArtifact(exe_tests);
-    const test_step = b.step("test", "Run tests");
-    test_step.dependOn(&run_exe_tests.step);
-
-    // PACKAGES
-
-    // Shared Packages
-
-    // ECS
-
-    const zig_ecs = b.dependency("entt", .{
-        .target = target,
-        .optimize = optimize,
-    });
-    const ecs = zig_ecs.module("zig-ecs");
-    exe.root_module.addImport("ecs", ecs);
-    shared_module.addImport("ecs", ecs);
-
-    // Websocket
-
-    const zig_ws = b.dependency("websocket", .{
-        .target = target,
-        .optimize = optimize,
-    });
-    const ws = zig_ws.module("websocket");
-    exe.root_module.addImport("websocket", ws);
-    shared_module.addImport("websocket", ws);
-
-    // Client Packages
+    build_shared(b, exe, target, optimize);
 
     // Raylib
-
     const raylib_dep = b.dependency("raylib_zig", .{
         .target = target,
         .optimize = optimize,
@@ -113,11 +39,8 @@ pub fn build(b: *std.Build) void {
 
     exe.linkLibrary(raylib_artifact);
     client_module.addImport("raylib", raylib);
-    shared_module.addImport("raylib", raylib);
-    engine_module.addImport("raylib", raylib);
-
     client_module.addImport("raygui", raygui);
-    engine_module.addImport("raygui", raygui);
+
     // WASM build
     if (target.query.os_tag == .emscripten) {
         const emsdk = rlz.emsdk;
@@ -148,4 +71,71 @@ pub fn build(b: *std.Build) void {
         emrun_step.dependOn(emcc_step);
         run_step.dependOn(emrun_step);
     }
+}
+
+fn build_server(b: *std.Build) void {
+    const target = b.standardTargetOptions(.{});
+    const optimize = b.standardOptimizeOption(.{});
+
+    const server_module = b.createModule(.{
+        .root_source_file = b.path("src/server/main.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+
+    const exe, _ = build_exe(b, server_module);
+
+    build_shared(b, exe, target, optimize);
+}
+
+fn build_exe(b: *std.Build, mod: *std.Build.Module) struct { *std.Build.Step.Compile, *std.Build.Step } {
+    const exe = b.addExecutable(.{
+        .name = "fear_city",
+        .root_module = mod,
+    });
+    b.installArtifact(exe);
+
+    const run_cmd = b.addRunArtifact(exe);
+    const run_step = b.step("run", "Run the app");
+    run_step.dependOn(&run_cmd.step);
+    run_cmd.step.dependOn(b.getInstallStep());
+
+    // This allows the user to pass arguments to the application in the build
+    // command itself, like this: `zig build run -- arg1 arg2 etc`
+    if (b.args) |args| {
+        run_cmd.addArgs(args);
+    }
+
+    const exe_tests = b.addTest(.{
+        .root_module = exe.root_module,
+    });
+
+    const run_exe_tests = b.addRunArtifact(exe_tests);
+    const test_step = b.step("test", "Run tests");
+    test_step.dependOn(&run_exe_tests.step);
+
+    return .{ exe, run_step };
+}
+
+fn build_shared(
+    b: *std.Build,
+    exe: *std.Build.Step.Compile,
+    target: std.Build.ResolvedTarget,
+    optimize: std.builtin.OptimizeMode,
+) void {
+    // Engine
+    const engine = b.createModule(.{
+        .root_source_file = b.path("src/engine/lib.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    exe.root_module.addImport("engine", engine);
+
+    // ECS
+    const zig_ecs = b.dependency("entt", .{
+        .target = target,
+        .optimize = optimize,
+    });
+    const ecs = zig_ecs.module("zig-ecs");
+    exe.root_module.addImport("ecs", ecs);
 }
