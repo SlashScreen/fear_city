@@ -25,7 +25,7 @@ fn build_client(b: *std.Build) void {
 
     const exe, const run_step = build_exe(b, client_module);
 
-    build_shared(b, exe, target, optimize);
+    build_shared(b, target, optimize, &.{client_module});
 
     // Raylib
     const raylib_dep = b.dependency("raylib_zig", .{
@@ -83,9 +83,9 @@ fn build_server(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    const exe, _ = build_exe(b, server_module);
+    _ = build_exe(b, server_module);
 
-    build_shared(b, exe, target, optimize);
+    build_shared(b, target, optimize, &.{server_module});
 }
 
 fn build_exe(b: *std.Build, mod: *std.Build.Module) struct { *std.Build.Step.Compile, *std.Build.Step } {
@@ -119,9 +119,9 @@ fn build_exe(b: *std.Build, mod: *std.Build.Module) struct { *std.Build.Step.Com
 
 fn build_shared(
     b: *std.Build,
-    exe: *std.Build.Step.Compile,
     target: std.Build.ResolvedTarget,
     optimize: std.builtin.OptimizeMode,
+    modules: []const *std.Build.Module,
 ) void {
     // Engine
     const engine = b.createModule(.{
@@ -129,7 +129,9 @@ fn build_shared(
         .target = target,
         .optimize = optimize,
     });
-    exe.root_module.addImport("engine", engine);
+    for (modules) |module| {
+        module.addImport("engine", engine);
+    }
 
     // ECS
     const zig_ecs = b.dependency("entt", .{
@@ -137,5 +139,7 @@ fn build_shared(
         .optimize = optimize,
     });
     const ecs = zig_ecs.module("zig-ecs");
-    exe.root_module.addImport("ecs", ecs);
+    for (modules) |module| {
+        module.addImport("ecs", ecs);
+    }
 }

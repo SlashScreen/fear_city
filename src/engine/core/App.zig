@@ -16,13 +16,11 @@ pub fn init(alloc: std.mem.Allocator) App {
 }
 
 pub fn tick(self: *App) void {
-    self.layer_stack.tick() catch |err| {
-        std.log.err("Error occured during tick: {any}", .{err});
-    };
+    self.layer_stack.tick(self);
 }
 
 pub fn deinit(self: *App) void {
-    self.layer_stack.deinit();
+    self.layer_stack.deinit(self);
 }
 
 pub fn close(self: *App) void {

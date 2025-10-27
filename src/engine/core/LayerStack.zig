@@ -2,6 +2,7 @@ const std = @import("std");
 
 const Event = @import("Event.zig");
 const Layer = @import("Layer.zig");
+const App = @import("App.zig");
 const LayerStack = @This();
 
 allocator: std.mem.Allocator,
@@ -14,50 +15,50 @@ pub fn init(alloc: std.mem.Allocator) LayerStack {
     };
 }
 
-pub fn add_layer(self: *LayerStack, layer: Layer) !void {
+pub fn add_layer(self: *LayerStack, layer: Layer, app: *App) !void {
     try self.stack.append(self.allocator, layer);
-    layer.init() catch |err| {
-        std.log.err("Error executing init at layer: {any}", .{err});
+    layer.init(app) catch |err| {
+        std.log.err("Error executing init to layer {s}: {any}", .{ layer.name, err });
     };
 }
 
-pub fn remove_top_layer(self: *LayerStack) !void {
+pub fn remove_top_layer(self: *LayerStack, app: *App) void {
     const l = self.stack.pop();
     if (l) |layer| {
-        layer.deinit() catch |err| {
-            std.log.err("Error executing deinit at layer: {any}", .{err});
+        layer.deinit(app) catch |err| {
+            std.log.err("Error executing deinit to layer {s}: {any}", .{ layer.name, err });
         };
     }
 }
 
-pub fn tick(self: *LayerStack) !void {
-    for ((self.stack.items.len - 1)..0) |idx| {
-        const layer = self.stack.items[idx];
-        layer.tick() catch |err| {
-            std.log.err("Error executing tick at layer at {d}: {any}", .{ idx, err });
+pub fn tick(self: *LayerStack, app: *App) void {
+    var it = std.mem.reverseIterator(self.stack.items);
+    while (it.next()) |layer| {
+        layer.tick(app) catch |err| {
+            std.log.err("Error executing tick at layer at {s}: {any}", .{ layer.name, err });
         };
     }
 }
 
-pub fn broadcast_event(self: *LayerStack, event: *Event) void {
-    for ((self.stack.items.len - 1)..0) |idx| {
+pub fn broadcast_event(self: *LayerStack, event: *Event, app: *App) void {
+    var it = std.mem.reverseIterator(self.stack.items);
+    while (it.next()) |layer| {
         if (event.consumed) {
             break;
         }
 
-        const layer = self.stack.items[idx];
-        layer.on_message(event) catch |err| {
-            std.log.err("Error broadcasting event {} to layer {d}: {}", .{ event.key, idx, err });
+        layer.on_message(event, app) catch |err| {
+            std.log.err("Error broadcasting event {} to layer {s}: {}", .{ event.key, layer.name, err });
         };
     }
 }
 
-pub fn deinit(self: *LayerStack) void {
+pub fn deinit(self: *LayerStack, app: *App) void {
     while (self.stack.items.len > 0) {
         const l = self.stack.pop();
         if (l) |layer| {
-            layer.deinit() catch |err| {
-                std.log.err("Error executing deinit at layer: {any}", .{err});
+            layer.deinit(app) catch |err| {
+                std.log.err("Error executing deinit to layer {s}: {any}", .{ layer.name, err });
             };
         } else {
             break;
