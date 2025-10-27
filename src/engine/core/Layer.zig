@@ -12,19 +12,19 @@ pub const VTable = struct {
 };
 
 pub fn init(self: Layer) !void {
-    self.vtable.init(self.context);
+    try self.vtable.init(self.context);
 }
 
 pub fn tick(self: Layer) !void {
-    self.vtable.tick(self.context);
+    try self.vtable.tick(self.context);
 }
 
 pub fn deinit(self: Layer) !void {
-    self.vtable.deinit(self.context);
+    try self.vtable.deinit(self.context);
 }
 
 pub fn on_message(self: Layer, event: *Event) !void {
-    self.vtable.on_message(self.context, event);
+    try self.vtable.on_message(self.context, event);
 }
 
 pub fn wrap(
@@ -37,19 +37,19 @@ pub fn wrap(
 ) Layer {
     const wrapped = struct {
         fn init(ctx: *anyopaque) anyerror!void {
-            init_fn(@ptrCast(@alignCast(ctx)));
+            try init_fn(@ptrCast(@alignCast(ctx)));
         }
 
         fn tick(ctx: *anyopaque) anyerror!void {
-            tick_fn(@ptrCast(@alignCast(ctx)));
+            try tick_fn(@ptrCast(@alignCast(ctx)));
         }
 
         fn deinit(ctx: *anyopaque) anyerror!void {
-            deinit_fn(@ptrCast(@alignCast(ctx)));
+            try deinit_fn(@ptrCast(@alignCast(ctx)));
         }
 
         fn on_message(ctx: *anyopaque, event: *Event) anyerror!void {
-            message_fn(@ptrCast(@alignCast(ctx)), event);
+            try message_fn(@ptrCast(@alignCast(ctx)), event);
         }
     };
 

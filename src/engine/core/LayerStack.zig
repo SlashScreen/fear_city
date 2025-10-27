@@ -43,7 +43,7 @@ pub fn tick(self: *LayerStack) !void {
     }
 }
 
-pub fn broadcast_event(self: LayerStack, event: *Event) void {
+pub fn broadcast_event(self: *LayerStack, event: *Event) void {
     for ((self.stack.items.len - 1)..0) |idx| {
         if (event.consumed) {
             break;
@@ -56,7 +56,7 @@ pub fn broadcast_event(self: LayerStack, event: *Event) void {
     }
 }
 
-pub fn deinit(self: LayerStack) void {
+pub fn deinit(self: *LayerStack) void {
     while (self.stack.items.len > 0) {
         const l = self.stack.pop();
         if (l) |layer| {

@@ -1,12 +1,12 @@
 const Event = @This();
 
-key: @Type(.enum_literal),
+key: []const u8,
 payload: *anyopaque,
 consumed: bool,
 
 pub fn create(comptime T: anytype, key: @Type(.enum_literal), data: *T) Event {
     return .{
-        .key = key,
+        .key = @typeName(key),
         .payload = @ptrCast(@alignCast(data)),
         .consumed = false,
     };

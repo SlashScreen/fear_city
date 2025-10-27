@@ -7,7 +7,7 @@ const RenderingLayer = @This();
 
 pub fn init(self: *RenderingLayer) !void {
     _ = self;
-    std.debug.print("Initialized Renderlayer", .{});
+    std.debug.print("Initialized RenderLayer\n", .{});
 }
 
 pub fn tick(self: *RenderingLayer) !void {
@@ -18,8 +18,9 @@ pub fn deinit(self: *RenderingLayer) !void {
     _ = self;
 }
 
-pub fn on_message(self: *RenderingLayer) !void {
+pub fn on_message(self: *RenderingLayer, event: *Event) !void {
     _ = self;
+    _ = event;
 }
 
 pub fn as_layer(self: *RenderingLayer) Layer {
