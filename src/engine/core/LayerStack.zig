@@ -48,7 +48,7 @@ pub fn broadcast_event(self: *LayerStack, event: *Event, app: *App) void {
         }
 
         layer.on_message(event, app) catch |err| {
-            std.log.err("Error broadcasting event {} to layer {s}: {}", .{ event.key, layer.name, err });
+            std.log.err("Error broadcasting event {s} to layer {s}: {any}", .{ event.key, layer.name, err });
         };
     }
 }

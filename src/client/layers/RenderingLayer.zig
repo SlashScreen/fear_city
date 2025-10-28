@@ -9,15 +9,11 @@ const RenderingLayer = @This();
 const screen_w = 800;
 const screen_h = 450;
 
-render_tex: rl.RenderTexture,
+render_tex: ?rl.RenderTexture,
 
 pub fn init(self: *RenderingLayer, app: *core.App) !void {
+    _ = self;
     _ = app;
-
-    rl.initWindow(screen_w, screen_h, "fear city");
-    rl.setTargetFPS(60);
-
-    self.render_tex = try rl.loadRenderTexture(screen_w, screen_h);
 
     std.debug.print("Initialized RenderLayer\n", .{});
 }
@@ -28,41 +24,32 @@ pub fn tick(self: *RenderingLayer, app: *core.App) !void {
         return;
     }
 
-    rl.beginTextureMode(self.render_tex);
-    {
-        rl.clearBackground(.white);
-        rl.drawText("Render texture works", 190, 200, 20, .light_gray);
-    }
-    rl.endTextureMode();
+    if (self.render_tex) |tex| {
+        rl.beginTextureMode(tex);
+        {
+            rl.clearBackground(.white);
+            rl.drawText("Render texture works", 190, 200, 20, .light_gray);
+        }
+        rl.endTextureMode();
 
-    rl.beginDrawing();
-    {
-        rl.clearBackground(.black);
-        rl.drawTextureRec(
-            self.render_tex.texture,
-            .init(
-                0.0,
-                0.0,
-                @floatFromInt(self.render_tex.texture.width),
-                @floatFromInt(-self.render_tex.texture.height),
-            ),
-            .init(0.0, 0.0),
-            .white,
-        );
+        var ev = Event.create(rl.RenderTexture, .screen_rendered, @constCast(&tex));
+        app.layer_stack.broadcast_event(&ev, app);
     }
-    rl.endDrawing();
 }
 
 pub fn deinit(self: *RenderingLayer, app: *core.App) !void {
     _ = app;
-    rl.unloadTexture(self.render_tex.texture);
-    rl.closeWindow();
+    if (self.render_tex) |tex| {
+        rl.unloadTexture(tex.texture);
+    }
 }
 
 pub fn on_message(self: *RenderingLayer, event: *Event, app: *core.App) !void {
-    _ = self;
-    _ = event;
     _ = app;
+
+    if (event.is(.window_created)) {
+        self.render_tex = try rl.loadRenderTexture(screen_w, screen_h);
+    }
 }
 
 pub fn as_layer(self: *RenderingLayer) Layer {
