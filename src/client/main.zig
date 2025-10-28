@@ -8,7 +8,9 @@ pub fn main() !void {
     const alloc = arena.allocator();
     var app = engine.Core.App.init(alloc);
 
-    var r_layer = RenderingLayer{};
+    var r_layer = RenderingLayer{
+        .render_tex = undefined,
+    };
     const render_layer = r_layer.as_layer();
 
     try app.layer_stack.add_layer(render_layer, &app);
